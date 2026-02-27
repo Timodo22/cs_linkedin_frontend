@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudShapers Leads Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #f8f9fa; }
+        .geschikt { background-color: #e6ffe6; }
+        .niet-geschikt { background-color: #ffe6e6; }
+        button { padding: 8px 16px; cursor: pointer; background-color: #0056b3; color: white; border: none; border-radius: 4px; }
+        button:hover { background-color: #004494; }
+        input[type="password"] { padding: 8px; margin-right: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        .hidden { display: none; }
+        .header { display: flex; justify-content: space-between; align-items: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="login-screen">
+        <h2>Login Resource Manager</h2>
+        <input type="password" id="password" placeholder="Wachtwoord invoeren">
+        <button onclick="login()">Login</button>
+    </div>
+
+    <div id="dashboard-screen" class="hidden">
+        <div class="header">
+            <h1>CloudShapers Leads</h1>
+            <button onclick="logout()" style="background-color: #dc3545;">Uitloggen</button>
+        </div>
+        
+        <table id="leads-table">
+            <thead>
+                <tr>
+                    <th>Naam</th>
+                    <th>Status</th>
+                    <th>Samenvatting AI</th>
+                    <th>Actie</th>
+                </tr>
+            </thead>
+            <tbody id="leads-body">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // PAS DIT AAN NAAR JOUW CLOUDFLARE WORKER URL
+    const API_URL = "https://jouw-worker.jouw-naam.workers.dev"; 
+
+    // Check of we al ingelogd zijn bij het laden van de pagina
+    document.addEventListener("DOMContentLoaded", () => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            showDashboard();
+            fetchLeads();
+        }
+    });
+
+    async function login() {
+        const passwordInput = document.getElementById('password').value;
+        try {
+            const res = await fetch(`${API_URL}/api/login`, {
+                method: 'POST',
+                body: JSON.stringify({ password: passwordInput }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                localStorage.setItem('token', data.token); // Bewaar token in browser
+                showDashboard();
+                fetchLeads();
+            } else {
+                alert("Fout wachtwoord!");
+            }
+        } catch (error) {
+            console.error("Login fout:", error);
+            alert("Kan geen verbinding maken met de server.");
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('token');
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('dashboard-screen').classList.add('hidden');
+        document.getElementById('password').value = '';
+    }
+
+    function showDashboard() {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('dashboard-screen').classList.remove('hidden');
+    }
+
+    async function fetchLeads() {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch(`${API_URL}/api/leads`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (res.status === 401) {
+                logout(); // Token ongeldig, log uit
+                return;
+            }
+
+            const leads = await res.json();
+            renderTable(leads);
+        } catch (error) {
+            console.error("Fout bij ophalen leads:", error);
+        }
+    }
+
+    function renderTable(leads) {
+        const tbody = document.getElementById('leads-body');
+        tbody.innerHTML = ''; // Maak tabel leeg
+
+        leads.forEach(lead => {
+            const tr = document.createElement('tr');
+            tr.className = lead.status === 'GESCHIKT' ? 'geschikt' : 'niet-geschikt';
+
+            let actionHtml = '';
+            if (lead.status === 'GESCHIKT') {
+                // We geven het hele lead object door als een data-attribuut of via closure
+                actionHtml = `<button onclick='handleMessageClick(${lead.id}, "${lead.linkedin_url}")'>Bekijk & Genereer Bericht</button>`;
+            }
+
+            tr.innerHTML = `
+                <td><strong>${lead.name}</strong></td>
+                <td>${lead.status}</td>
+                <td><strong>${lead.reason || ''}</strong><br/>${lead.summary || ''}</td>
+                <td>${actionHtml}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function handleMessageClick(leadId, linkedinUrl) {
+        const token = localStorage.getItem('token');
+        
+        // 1. Open LinkedIn profiel
+        window.open(linkedinUrl, '_blank');
+
+        // 2. Vraag bericht op aan de API
+        try {
+            const res = await fetch(`${API_URL}/api/generate-message`, {
+                method: 'POST',
+                body: JSON.stringify({ lead_id: leadId }),
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                
+                // 3. Kopieer naar klembord
+                navigator.clipboard.writeText(data.message).then(() => {
+                    alert(`Bericht gekopieerd naar klembord!\n\n${data.message}`);
+                });
+            } else {
+                alert("Fout bij het genereren van het bericht.");
+            }
+        } catch (error) {
+            console.error("Fout:", error);
+            alert("Er is iets misgegaan bij het genereren.");
+        }
+    }
+</script>
+
+</body>
+</html>
