@@ -5,33 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CloudShapers Leads Dashboard</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
-        th { background-color: #f8f9fa; }
-        .geschikt { background-color: #e6ffe6; }
-        .niet-geschikt { background-color: #ffe6e6; }
-        button { padding: 8px 16px; cursor: pointer; background-color: #0056b3; color: white; border: none; border-radius: 4px; }
-        button:hover { background-color: #004494; }
-        input[type="password"] { padding: 8px; margin-right: 10px; border: 1px solid #ccc; border-radius: 4px; }
-        .hidden { display: none; }
-        .header { display: flex; justify-content: space-between; align-items: center; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f0f2f5; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 20px; }
+        
+        /* Scrape Sectie */
+        .action-panel { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
+        .action-panel input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        
+        /* Knoppen */
+        button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; transition: background 0.2s; }
+        .btn-primary { background-color: #0a66c2; color: white; } /* LinkedIn Blauw */
+        .btn-primary:hover { background-color: #004182; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        
+        /* Filters */
+        .filters { margin-bottom: 15px; display: flex; gap: 10px; }
+        .filter-btn { background-color: #e9ecef; color: #333; }
+        .filter-btn.active { background-color: #6c757d; color: white; }
+
+        /* Tabel */
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background-color: #f8f9fa; color: #555; }
+        .status-go { display: inline-block; padding: 5px 10px; background-color: #d4edda; color: #155724; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .status-nogo { display: inline-block; padding: 5px 10px; background-color: #f8d7da; color: #721c24; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="login-screen">
+    <div id="login-screen" style="max-width: 400px; margin: 100px auto; text-align: center;">
         <h2>Login Resource Manager</h2>
-        <input type="password" id="password" placeholder="Wachtwoord invoeren">
-        <button onclick="login()">Login</button>
+        <input type="password" id="password" placeholder="Wachtwoord" style="padding: 10px; width: 80%; margin-bottom: 10px;">
+        <br>
+        <button class="btn-primary" onclick="login()">Inloggen</button>
     </div>
 
     <div id="dashboard-screen" class="hidden">
         <div class="header">
-            <h1>CloudShapers Leads</h1>
-            <button onclick="logout()" style="background-color: #dc3545;">Uitloggen</button>
+            <h1>CloudShapers Sourcing Hub</h1>
+            <button class="btn-danger" onclick="logout()">Uitloggen</button>
+        </div>
+        
+        <div class="action-panel">
+            <input type="text" id="linkedin-url" placeholder="Plak hier de LinkedIn profiel URL...">
+            <button class="btn-primary" id="scrape-btn" onclick="startScraping()">Beoordeel Kandidaat</button>
+        </div>
+
+        <div class="filters">
+            <button class="filter-btn active" onclick="applyFilter('ALL', this)">Alles</button>
+            <button class="filter-btn" onclick="applyFilter('GESCHIKT', this)">GO's</button>
+            <button class="filter-btn" onclick="applyFilter('NIET GESCHIKT', this)">NO-GO's</button>
+            <button class="filter-btn" onclick="fetchLeads()" style="margin-left: auto;">↻ Ververs Tabel</button>
         </div>
         
         <table id="leads-table">
@@ -39,7 +67,7 @@
                 <tr>
                     <th>Naam</th>
                     <th>Status</th>
-                    <th>Samenvatting AI</th>
+                    <th>Claude's Oordeel</th>
                     <th>Actie</th>
                 </tr>
             </thead>
@@ -50,38 +78,31 @@
 </div>
 
 <script>
-    // PAS DIT AAN NAAR JOUW CLOUDFLARE WORKER URL
-    const API_URL = "https://jouw-worker.jouw-naam.workers.dev"; 
+    const API_URL = "https://jouw-worker.jouw-naam.workers.dev"; // PAS DIT AAN!
+    let allLeads = []; // Hier slaan we tijdelijk alle leads op voor het filteren
 
-    // Check of we al ingelogd zijn bij het laden van de pagina
     document.addEventListener("DOMContentLoaded", () => {
-        const token = localStorage.getItem('token');
-        if (token) {
+        if (localStorage.getItem('token')) {
             showDashboard();
             fetchLeads();
         }
     });
 
+    // --- AUTHENTICATIE ---
     async function login() {
         const passwordInput = document.getElementById('password').value;
-        try {
-            const res = await fetch(`${API_URL}/api/login`, {
-                method: 'POST',
-                body: JSON.stringify({ password: passwordInput }),
-                headers: { 'Content-Type': 'application/json' }
-            });
-            
-            if (res.ok) {
-                const data = await res.json();
-                localStorage.setItem('token', data.token); // Bewaar token in browser
-                showDashboard();
-                fetchLeads();
-            } else {
-                alert("Fout wachtwoord!");
-            }
-        } catch (error) {
-            console.error("Login fout:", error);
-            alert("Kan geen verbinding maken met de server.");
+        const res = await fetch(`${API_URL}/api/login`, {
+            method: 'POST',
+            body: JSON.stringify({ password: passwordInput }),
+            headers: { 'Content-Type': 'application/json' }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem('token', data.token);
+            showDashboard();
+            fetchLeads();
+        } else {
+            alert("Fout wachtwoord!");
         }
     }
 
@@ -89,7 +110,6 @@
         localStorage.removeItem('token');
         document.getElementById('login-screen').classList.remove('hidden');
         document.getElementById('dashboard-screen').classList.add('hidden');
-        document.getElementById('password').value = '';
     }
 
     function showDashboard() {
@@ -97,79 +117,119 @@
         document.getElementById('dashboard-screen').classList.remove('hidden');
     }
 
+    // --- APIFY AANSTUREN ---
+    async function startScraping() {
+        const urlInput = document.getElementById('linkedin-url').value;
+        const btn = document.getElementById('scrape-btn');
+        const token = localStorage.getItem('token');
+
+        if (!urlInput.includes("linkedin.com/in/")) {
+            alert("Dit lijkt geen geldige LinkedIn profiel URL.");
+            return;
+        }
+
+        btn.innerText = "Bezig...";
+        btn.disabled = true;
+
+        try {
+            const res = await fetch(`${API_URL}/api/scrape`, {
+                method: 'POST',
+                body: JSON.stringify({ linkedin_url: urlInput }),
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json' 
+                }
+            });
+            
+            if (res.ok) {
+                alert("Scrape gestart! Apify draait nu op de achtergrond. Make.com verwerkt dit zometeen. Klik over een minuutje op 'Ververs Tabel'.");
+                document.getElementById('linkedin-url').value = ''; // Maak veld leeg
+            } else {
+                alert("Er ging iets mis bij het starten van de scraper.");
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            btn.innerText = "Beoordeel Kandidaat";
+            btn.disabled = false;
+        }
+    }
+
+    // --- DATA OPHALEN EN FILTEREN ---
     async function fetchLeads() {
         const token = localStorage.getItem('token');
         try {
-            const res = await fetch(`${API_URL}/api/leads`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const res = await fetch(`${API_URL}/api/leads`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.status === 401) return logout();
             
-            if (res.status === 401) {
-                logout(); // Token ongeldig, log uit
-                return;
-            }
-
-            const leads = await res.json();
-            renderTable(leads);
+            allLeads = await res.json();
+            renderTable(allLeads); // Laat standaard alles zien
+            
+            // Zet filterknoppen visueel weer op 'Alles'
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.filter-btn').classList.add('active'); 
         } catch (error) {
-            console.error("Fout bij ophalen leads:", error);
+            console.error("Fout bij ophalen:", error);
+        }
+    }
+
+    function applyFilter(status, buttonElement) {
+        // Update actieve knop styling
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        buttonElement.classList.add('active');
+
+        // Filter de data
+        if (status === 'ALL') {
+            renderTable(allLeads);
+        } else {
+            const filteredData = allLeads.filter(lead => lead.status === status);
+            renderTable(filteredData);
         }
     }
 
     function renderTable(leads) {
         const tbody = document.getElementById('leads-body');
-        tbody.innerHTML = ''; // Maak tabel leeg
+        tbody.innerHTML = '';
 
         leads.forEach(lead => {
+            const isGo = lead.status === 'GESCHIKT';
+            const statusBadge = isGo ? '<span class="status-go">GO</span>' : '<span class="status-nogo">NO-GO</span>';
+            const actionHtml = isGo ? `<button class="btn-primary" onclick='handleMessageClick(${lead.id}, "${lead.linkedin_url}")'>Invite Schrijven</button>` : '';
+
             const tr = document.createElement('tr');
-            tr.className = lead.status === 'GESCHIKT' ? 'geschikt' : 'niet-geschikt';
-
-            let actionHtml = '';
-            if (lead.status === 'GESCHIKT') {
-                // We geven het hele lead object door als een data-attribuut of via closure
-                actionHtml = `<button onclick='handleMessageClick(${lead.id}, "${lead.linkedin_url}")'>Bekijk & Genereer Bericht</button>`;
-            }
-
             tr.innerHTML = `
-                <td><strong>${lead.name}</strong></td>
-                <td>${lead.status}</td>
-                <td><strong>${lead.reason || ''}</strong><br/>${lead.summary || ''}</td>
+                <td><strong>${lead.name || 'Onbekend'}</strong></td>
+                <td>${statusBadge}</td>
+                <td style="max-width: 400px; font-size: 14px;">
+                    <strong>${lead.reason || ''}</strong><br>
+                    <span style="color: #666;">${lead.summary || ''}</span>
+                </td>
                 <td>${actionHtml}</td>
             `;
             tbody.appendChild(tr);
         });
     }
 
+    // --- BERICHT GENEREREN ---
     async function handleMessageClick(leadId, linkedinUrl) {
         const token = localStorage.getItem('token');
-        
-        // 1. Open LinkedIn profiel
-        window.open(linkedinUrl, '_blank');
+        window.open(linkedinUrl, '_blank'); // Open LinkedIn profiel
 
-        // 2. Vraag bericht op aan de API
         try {
             const res = await fetch(`${API_URL}/api/generate-message`, {
                 method: 'POST',
                 body: JSON.stringify({ lead_id: leadId }),
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
             });
 
             if (res.ok) {
                 const data = await res.json();
-                
-                // 3. Kopieer naar klembord
                 navigator.clipboard.writeText(data.message).then(() => {
-                    alert(`Bericht gekopieerd naar klembord!\n\n${data.message}`);
+                    alert(`Bericht voor Claude succesvol gekopieerd naar je klembord!\n\n${data.message}`);
                 });
-            } else {
-                alert("Fout bij het genereren van het bericht.");
             }
         } catch (error) {
             console.error("Fout:", error);
-            alert("Er is iets misgegaan bij het genereren.");
         }
     }
 </script>
