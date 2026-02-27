@@ -82,8 +82,8 @@
 </div>
 
 <script>
-    // PAS DEZE URL AAN NAAR JOUW CLOUDFLARE WORKER!
-    const API_URL = "https://cslinkedinapi.timosteen22.workers.dev/"; 
+    // PAS DEZE URL AAN NAAR JOUW CLOUDFLARE WORKER! (ZONDER schuine streep aan het eind)
+    const API_URL = "https://cslinkedinapi.timosteen22.workers.dev"; 
     
     let allLeads = []; 
 
@@ -124,3 +124,120 @@
 
     function showDashboard() {
         document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('dashboard-screen').classList.remove('hidden');
+    }
+
+    async function startScraping() {
+        const jobsInput = document.getElementById('search-jobs').value;
+        const locationInput = document.getElementById('search-location').value;
+        const maxProfiles = parseInt(document.getElementById('search-max').value, 10) || 20;
+        const btn = document.getElementById('scrape-btn');
+        const token = localStorage.getItem('token');
+
+        if (!jobsInput) return alert("Vul minimaal één functietitel in.");
+
+        btn.innerText = "Bezig met doorgeven...";
+        btn.disabled = true;
+
+        // Zet de komma-gescheiden tekst om in lijstjes (arrays) voor Apify
+        const jobTitlesArray = jobsInput.split(',').map(item => item.trim()).filter(Boolean);
+        const locationsArray = locationInput ? locationInput.split(',').map(item => item.trim()).filter(Boolean) : [];
+
+        // De exacte payload structuur die de HarvestAPI actor verwacht
+        const apifyPayload = {
+            "autoQuerySegmentation": false,
+            "currentJobTitles": jobTitlesArray,
+            "locations": locationsArray,
+            "maxItems": maxProfiles,
+            "profileScraperMode": "Short", // Tip: Verander naar "Full" als Claude details mist!
+            "recentlyChangedJobs": false,
+            "yearsOfExperienceIds": [] // Leeg gelaten, zodat hij alle niveaus pakt
+        };
+
+        try {
+            const res = await fetch(`${API_URL}/api/scrape`, {
+                method: 'POST',
+                body: JSON.stringify(apifyPayload),
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                alert("Apify sleepnet uitgegooid! 🎣\n\nApify is nu aan het zoeken. Zodra hij klaar is, gaat Make.com alles beoordelen. Klik over een minuutje op 'Tabel Verversen'.");
+            } else {
+                alert("Fout bij starten Apify: " + data.error);
+            }
+        } catch (error) {
+            alert("Verbindingsfout bij doorgeven opdracht.");
+        } finally {
+            btn.innerText = "Start Apify Sleepnet";
+            btn.disabled = false;
+        }
+    }
+
+    async function fetchLeads() {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch(`${API_URL}/api/leads`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.status === 401) return logout();
+            
+            allLeads = await res.json();
+            renderTable(allLeads);
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.filter-btn').classList.add('active'); 
+        } catch (error) {
+            console.error("Fout bij ophalen:", error);
+        }
+    }
+
+    function applyFilter(status, btnElement) {
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        btnElement.classList.add('active');
+        if (status === 'ALL') renderTable(allLeads);
+        else renderTable(allLeads.filter(lead => lead.status === status));
+    }
+
+    function renderTable(leads) {
+        const tbody = document.getElementById('leads-body');
+        tbody.innerHTML = '';
+
+        if (!leads || leads.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4">Nog geen leads gevonden. Gooi het sleepnet uit!</td></tr>';
+            return;
+        }
+
+        leads.forEach(lead => {
+            const isGo = lead.status === 'GESCHIKT';
+            const statusBadge = isGo ? '<span class="status-go">GO</span>' : '<span class="status-nogo">NO-GO</span>';
+            
+            const actionHtml = isGo && lead.invite_message ? 
+                `<button class="btn-primary" onclick='copyAndOpen(\`${lead.invite_message.replace(/'/g, "\\'")}\`, "${lead.linkedin_url}")'>Kopieer Invite & Open Profiel</button>` : 
+                (isGo ? '<i>Geen invite beschikbaar</i>' : '');
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <strong>${lead.name || 'Onbekend'}</strong><br>
+                    <span style="font-size: 12px; color: #666;">${lead.headline || ''}</span>
+                </td>
+                <td>${statusBadge}</td>
+                <td class="summary-text">
+                    <strong>${lead.reason || ''}</strong><br>
+                    <span style="color: #666;">${lead.summary || ''}</span>
+                </td>
+                <td>${actionHtml}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function copyAndOpen(message, url) {
+        navigator.clipboard.writeText(message).then(() => {
+            alert(`✅ Invite gekopieerd naar klembord!\n\n${message}`);
+            if (url) window.open(url, '_blank');
+        });
+    }
+</script>
+
+</body>
+</html>
