@@ -88,7 +88,7 @@
         .btn-danger { background-color: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 0.5rem 1rem; font-size: 0.85rem;}
         .btn-danger:hover { background-color: var(--danger); color: white; }
 
-        /* --- TOAST NOTIFICATIES (De moderne feedback) --- */
+        /* --- TOAST NOTIFICATIES --- */
         #toast-container {
             position: fixed; bottom: 20px; right: 20px; z-index: 9999;
             display: flex; flex-direction: column; gap: 10px;
@@ -119,11 +119,15 @@
         tr:last-child td { border-bottom: none; }
         tr:hover td { background-color: #f8fafc; }
         
+        /* AVATARS EN NAMEN */
+        .avatar { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); flex-shrink: 0; }
+        .name-wrapper { display: flex; align-items: center; gap: 12px; }
+        .lead-name { font-weight: 600; color: var(--text-main); font-size: 1rem; margin-bottom: 0.25rem; display: block; }
+        .lead-headline { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
+        
         .status-go { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; background-color: #dcfce7; color: #166534; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; border: 1px solid #bbf7d0; }
         .status-nogo { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; background-color: #fee2e2; color: #991b1b; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; border: 1px solid #fecaca; }
         
-        .lead-name { font-weight: 600; color: var(--text-main); font-size: 1rem; margin-bottom: 0.25rem; display: block; }
-        .lead-headline { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
         .summary-text strong { color: var(--text-main); display: block; margin-bottom: 0.25rem; font-weight: 600; }
         .summary-text span { color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; }
 
@@ -204,13 +208,12 @@
     const API_URL = "https://cslinkedinapi.timosteen22.workers.dev"; 
     let allLeads = []; 
 
-    // --- TOAST NOTIFICATIE FUNCTIE ---
+    // --- TOAST NOTIFICATIE ---
     function showToast(message, type = 'success') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
         
-        // Icoontje afhankelijk van type
         const icon = type === 'success' ? 
             '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>' : 
             '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
@@ -218,7 +221,6 @@
         toast.innerHTML = `${icon} <span>${message}</span>`;
         container.appendChild(toast);
 
-        // Verwijder de toast na 4 seconden
         setTimeout(() => {
             toast.style.opacity = '0';
             setTimeout(() => toast.remove(), 300);
@@ -362,11 +364,21 @@
                 `<button class="btn-invite" onclick='copyAndOpen(\`${lead.invite_message.replace(/'/g, "\\'")}\`, "${lead.linkedin_url}")'>Kopieer Invite & Open Profiel</button>` : 
                 (isGo ? '<span style="color:var(--text-muted); font-size:0.85rem;">Geen bericht</span>' : '');
 
+            // Render de profielfoto of een grijze bol als fallback
+            const avatarImg = lead.picture_url ? 
+                `<img src="${lead.picture_url}" class="avatar" alt="Avatar">` : 
+                `<div class="avatar" style="background:#e2e8f0;"></div>`;
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>
-                    <span class="lead-name">${lead.name || 'Onbekend'}</span>
-                    <span class="lead-headline">${lead.headline || 'Geen headline beschikbaar'}</span>
+                    <div class="name-wrapper">
+                        ${avatarImg}
+                        <div>
+                            <span class="lead-name">${lead.name || 'Onbekend'}</span>
+                            <span class="lead-headline">${lead.headline || 'Geen headline beschikbaar'}</span>
+                        </div>
+                    </div>
                 </td>
                 <td>${statusBadge}</td>
                 <td class="summary-text">
