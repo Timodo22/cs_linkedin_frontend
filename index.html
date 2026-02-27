@@ -4,88 +4,226 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CloudShapers Sourcing Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f0f2f5; color: #333; margin: 0; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 20px; }
-        
-        .action-panel { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .action-panel input[type="text"], .action-panel input[type="number"] { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; }
+        :root {
+            --bg-body: #f1f5f9;
+            --bg-card: #ffffff;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #10b981;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --header-bg: #0f172a;
+        }
+
+        * { box-sizing: border-box; }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            padding: 0; margin: 0;
+            background-color: var(--bg-body); 
+            color: var(--text-main); 
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- LAYOUT & CARDS --- */
+        .top-nav {
+            background-color: var(--header-bg);
+            color: white; padding: 1rem 2rem;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .top-nav h1 {
+            margin: 0; font-size: 1.25rem; font-weight: 700;
+            letter-spacing: -0.025em; display: flex; align-items: center; gap: 10px;
+        }
+
+        .top-nav h1 span { color: #38bdf8; }
+
+        .container { max-width: 1280px; margin: 2rem auto; padding: 0 1.5rem; }
+
+        .card {
+            background: var(--bg-card); border-radius: 12px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 1.5rem;
+        }
+
+        /* --- LOGIN SCHERM --- */
+        #login-screen {
+            max-width: 400px; margin: 10vh auto; text-align: center; padding: 3rem 2rem;
+        }
+        #login-screen h2 { margin-top: 0; margin-bottom: 1.5rem; font-weight: 600; }
+
+        /* --- FORMS & INPUTS --- */
+        input[type="text"], input[type="number"], input[type="password"] { 
+            padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 8px; 
+            font-size: 0.95rem; font-family: 'Inter', sans-serif; outline: none; transition: all 0.2s;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:focus {
+            border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .action-panel { display: flex; gap: 1rem; flex-wrap: wrap; align-items: stretch; }
         .input-keyword { flex: 2; min-width: 250px; }
         .input-location { flex: 1; min-width: 150px; }
         .input-number { width: 100px; }
-        .hint-text { font-size: 12px; color: #666; margin-top: 0; margin-bottom: 20px; padding-left: 5px; }
-        
-        button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; transition: background 0.2s; font-size: 14px; }
-        .btn-primary { background-color: #0a66c2; color: white; }
-        .btn-primary:hover { background-color: #004182; }
-        .btn-primary:disabled { background-color: #7ba6d4; cursor: not-allowed; }
-        .btn-danger { background-color: #dc3545; color: white; }
-        
-        .filters { margin-bottom: 15px; display: flex; gap: 10px; }
-        .filter-btn { background-color: #e9ecef; color: #333; }
-        .filter-btn.active { background-color: #495057; color: white; }
+        .hint-text { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.75rem; display: block; }
 
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 15px; border-bottom: 1px solid #eee; text-align: left; vertical-align: top; }
-        th { background-color: #f8f9fa; color: #555; }
-        .status-go { display: inline-block; padding: 5px 10px; background-color: #d4edda; color: #155724; border-radius: 20px; font-size: 12px; font-weight: bold; }
-        .status-nogo { display: inline-block; padding: 5px 10px; background-color: #f8d7da; color: #721c24; border-radius: 20px; font-size: 12px; font-weight: bold; }
-        .summary-text { max-width: 450px; font-size: 14px; line-height: 1.5; }
+        /* --- KNOPPEN --- */
+        button { 
+            padding: 0.75rem 1.25rem; cursor: pointer; border: none; border-radius: 8px; 
+            font-weight: 500; font-size: 0.95rem; transition: all 0.2s; font-family: 'Inter', sans-serif;
+        }
+        .btn-primary { background-color: var(--primary); color: white; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+        .btn-primary:disabled { background-color: #93c5fd; cursor: not-allowed; transform: none; box-shadow: none; }
+        
+        .btn-danger { background-color: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 0.5rem 1rem; font-size: 0.85rem;}
+        .btn-danger:hover { background-color: var(--danger); color: white; }
+
+        /* --- TOAST NOTIFICATIES (De moderne feedback) --- */
+        #toast-container {
+            position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .toast {
+            min-width: 250px; padding: 16px 20px; border-radius: 8px; background: white;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            display: flex; align-items: center; gap: 12px; font-size: 0.9rem; font-weight: 500;
+            animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            border-left: 4px solid var(--primary);
+            transition: opacity 0.3s ease;
+        }
+        .toast.success { border-left-color: var(--success); }
+        .toast.error { border-left-color: var(--danger); }
+        @keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* --- FILTERS & TABEL --- */
+        .filters { display: flex; gap: 0.5rem; margin-bottom: 1rem; align-items: center; }
+        .filter-btn { background-color: var(--bg-body); color: var(--text-muted); border: 1px solid var(--border); }
+        .filter-btn:hover { background-color: #e2e8f0; color: var(--text-main); }
+        .filter-btn.active { background-color: var(--text-main); color: white; border-color: var(--text-main); }
+        .refresh-btn { margin-left: auto; background-color: white; border: 1px solid var(--border); color: var(--text-main); display: flex; align-items: center; gap: 6px; }
+
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        th, td { padding: 1rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
+        th { background-color: #f8fafc; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background-color: #f8fafc; }
+        
+        .status-go { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; background-color: #dcfce7; color: #166534; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; border: 1px solid #bbf7d0; }
+        .status-nogo { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; background-color: #fee2e2; color: #991b1b; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; border: 1px solid #fecaca; }
+        
+        .lead-name { font-weight: 600; color: var(--text-main); font-size: 1rem; margin-bottom: 0.25rem; display: block; }
+        .lead-headline { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
+        .summary-text strong { color: var(--text-main); display: block; margin-bottom: 0.25rem; font-weight: 600; }
+        .summary-text span { color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; }
+
+        .btn-invite { background-color: white; color: var(--primary); border: 1px solid var(--border); font-size: 0.85rem; padding: 0.5rem 1rem; white-space: nowrap; }
+        .btn-invite:hover { border-color: var(--primary); background-color: #eff6ff; }
         
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div id="login-screen" style="max-width: 400px; margin: 100px auto; text-align: center;">
-        <h2>Login Resource Manager</h2>
-        <input type="password" id="password" placeholder="Wachtwoord" style="padding: 10px; width: 80%; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px;">
-        <br>
-        <button class="btn-primary" onclick="login()">Inloggen</button>
+<div id="toast-container"></div>
+
+<div id="login-screen" class="card">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary); margin-bottom: 1rem;"><path d="M17.5 19c2.4 0 4.5-2 4.5-4.5 0-2.3-1.8-4.2-4.1-4.4C17.1 6.8 14 5 11 5c-3.5 0-6.4 2.8-6.9 6.2C1.8 11.5 0 13.5 0 16c0 2.8 2.2 5 5 5h12.5z"/></svg>
+    <h2>CloudShapers Login</h2>
+    <p class="hint-text" style="margin-bottom: 1.5rem;">Log in met je database account</p>
+    
+    <input type="text" id="username" placeholder="Gebruikersnaam" style="width: 100%; margin-bottom: 0.75rem; text-align: center;">
+    <input type="password" id="password" placeholder="Wachtwoord" style="width: 100%; margin-bottom: 1.5rem; text-align: center;">
+    
+    <button class="btn-primary" onclick="login()" style="width: 100%;">Inloggen Dashboard</button>
+</div>
+
+<div id="dashboard-screen" class="hidden">
+    <div class="top-nav">
+        <h1>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #38bdf8;"><path d="M17.5 19c2.4 0 4.5-2 4.5-4.5 0-2.3-1.8-4.2-4.1-4.4C17.1 6.8 14 5 11 5c-3.5 0-6.4 2.8-6.9 6.2C1.8 11.5 0 13.5 0 16c0 2.8 2.2 5 5 5h12.5z"/></svg>
+            Cloud<span>Shapers</span> Hub
+        </h1>
+        <button class="btn-danger" onclick="logout()">Uitloggen</button>
     </div>
 
-    <div id="dashboard-screen" class="hidden">
-        <div class="header">
-            <h1>CloudShapers Sourcing Hub</h1>
-            <button class="btn-danger" onclick="logout()">Uitloggen</button>
+    <div class="container">
+        <div class="card">
+            <h3 style="margin-top: 0; margin-bottom: 1rem; font-size: 1rem; font-weight: 600;">Sourcing Sleepnet</h3>
+            <div class="action-panel">
+                <input type="text" id="search-jobs" class="input-keyword" placeholder="Functies (bijv. Azure devops, Cloud Architect)">
+                <input type="text" id="search-location" class="input-location" placeholder="Locaties (bijv. Eindhoven)">
+                <input type="number" id="search-max" class="input-number" title="Max profielen per run" value="20" min="1" max="100">
+                <button class="btn-primary" id="scrape-btn" onclick="startScraping()">Start Apify Search</button>
+            </div>
+            <span class="hint-text">Tip: Meerdere functies of locaties? Scheid ze met een komma.</span>
         </div>
-        
-        <div class="action-panel">
-            <input type="text" id="search-jobs" class="input-keyword" placeholder="Functies (bijv. Azure devops, Cloud Architect)">
-            <input type="text" id="search-location" class="input-location" placeholder="Locaties (bijv. Eindhoven, Den Bosch)">
-            <input type="number" id="search-max" class="input-number" title="Aantal profielen per run" value="20" min="1" max="100">
-            <button class="btn-primary" id="scrape-btn" onclick="startScraping()">Start Apify Sleepnet</button>
-        </div>
-        <p class="hint-text">* Meerdere functies of locaties? Scheid ze met een komma.</p>
 
-        <div class="filters">
-            <button class="filter-btn active" onclick="applyFilter('ALL', this)">Alles tonen</button>
-            <button class="filter-btn" onclick="applyFilter('GESCHIKT', this)">Alleen GO's</button>
-            <button class="filter-btn" onclick="applyFilter('NIET GESCHIKT', this)">Alleen NO-GO's</button>
-            <button class="filter-btn" onclick="fetchLeads()" style="margin-left: auto;">↻ Tabel Verversen</button>
+        <div class="card" style="padding: 0;">
+            <div style="padding: 1.5rem; border-bottom: 1px solid var(--border);">
+                <div class="filters">
+                    <button class="filter-btn active" onclick="applyFilter('ALL', this)">Alles tonen</button>
+                    <button class="filter-btn" onclick="applyFilter('GESCHIKT', this)">Alleen GO's</button>
+                    <button class="filter-btn" onclick="applyFilter('NIET GESCHIKT', this)">Alleen NO-GO's</button>
+                    <button class="btn-primary refresh-btn" onclick="fetchLeads()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 2.63-6.37L21 8"/><path d="M3 22v-6h6"/><path d="M21 12A9 9 0 1 0 18.36 17.37L3 16"/></svg>
+                        Tabel Verversen
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="leads-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;">Kandidaat</th>
+                            <th style="width: 10%;">Status</th>
+                            <th style="width: 45%;">AI Beoordeling</th>
+                            <th style="width: 20%;">Actie</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leads-body"></tbody>
+                </table>
+            </div>
         </div>
-        
-        <table id="leads-table">
-            <thead>
-                <tr>
-                    <th style="width: 20%;">Naam & Headline</th>
-                    <th style="width: 10%;">Status</th>
-                    <th style="width: 50%;">Beoordeling AI</th>
-                    <th style="width: 20%;">Actie</th>
-                </tr>
-            </thead>
-            <tbody id="leads-body"></tbody>
-        </table>
     </div>
 </div>
 
 <script>
-    // PAS DEZE URL AAN NAAR JOUW CLOUDFLARE WORKER! (ZONDER schuine streep aan het eind)
+    // PAS DEZE URL AAN NAAR JOUW CLOUDFLARE WORKER!
     const API_URL = "https://cslinkedinapi.timosteen22.workers.dev"; 
-    
     let allLeads = []; 
+
+    // --- TOAST NOTIFICATIE FUNCTIE ---
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        // Icoontje afhankelijk van type
+        const icon = type === 'success' ? 
+            '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>' : 
+            '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+        
+        toast.innerHTML = `${icon} <span>${message}</span>`;
+        container.appendChild(toast);
+
+        // Verwijder de toast na 4 seconden
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
 
     document.addEventListener("DOMContentLoaded", () => {
         if (localStorage.getItem('token')) {
@@ -94,12 +232,20 @@
         }
     });
 
+    document.getElementById("password").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") { event.preventDefault(); login(); }
+    });
+
     async function login() {
+        const usernameInput = document.getElementById('username').value;
         const passwordInput = document.getElementById('password').value;
+        
+        if (!usernameInput || !passwordInput) return showToast("Vul gebruikersnaam en wachtwoord in.", "error");
+
         try {
             const res = await fetch(`${API_URL}/api/login`, {
                 method: 'POST',
-                body: JSON.stringify({ password: passwordInput }),
+                body: JSON.stringify({ username: usernameInput, password: passwordInput }),
                 headers: { 'Content-Type': 'application/json' }
             });
             const data = await res.json();
@@ -107,11 +253,12 @@
                 localStorage.setItem('token', data.token);
                 showDashboard();
                 fetchLeads();
+                showToast("Succesvol ingelogd!", "success");
             } else {
-                alert(data.error || "Fout wachtwoord!");
+                showToast(data.error || "Fout wachtwoord of gebruikersnaam", "error");
             }
         } catch (error) {
-            alert("Kan niet verbinden met server.");
+            showToast("Kan niet verbinden met de server.", "error");
         }
     }
 
@@ -134,24 +281,22 @@
         const btn = document.getElementById('scrape-btn');
         const token = localStorage.getItem('token');
 
-        if (!jobsInput) return alert("Vul minimaal één functietitel in.");
+        if (!jobsInput) return showToast("Vul minimaal één functietitel in.", "error");
 
-        btn.innerText = "Bezig met doorgeven...";
+        btn.innerText = "Bezig met starten...";
         btn.disabled = true;
 
-        // Zet de komma-gescheiden tekst om in lijstjes (arrays) voor Apify
         const jobTitlesArray = jobsInput.split(',').map(item => item.trim()).filter(Boolean);
         const locationsArray = locationInput ? locationInput.split(',').map(item => item.trim()).filter(Boolean) : [];
 
-        // De exacte payload structuur die de HarvestAPI actor verwacht
         const apifyPayload = {
             "autoQuerySegmentation": false,
             "currentJobTitles": jobTitlesArray,
             "locations": locationsArray,
             "maxItems": maxProfiles,
-            "profileScraperMode": "Short", // Tip: Verander naar "Full" als Claude details mist!
+            "profileScraperMode": "Short", 
             "recentlyChangedJobs": false,
-            "yearsOfExperienceIds": [] // Leeg gelaten, zodat hij alle niveaus pakt
+            "yearsOfExperienceIds": [] 
         };
 
         try {
@@ -163,14 +308,14 @@
             const data = await res.json();
 
             if (res.ok && data.success) {
-                alert("Apify sleepnet uitgegooid! 🎣\n\nApify is nu aan het zoeken. Zodra hij klaar is, gaat Make.com alles beoordelen. Klik over een minuutje op 'Tabel Verversen'.");
+                showToast("Apify is gestart! 🚀 Resultaten volgen snel.", "success");
             } else {
-                alert("Fout bij starten Apify: " + data.error);
+                showToast(data.error || "Fout bij starten Apify", "error");
             }
         } catch (error) {
-            alert("Verbindingsfout bij doorgeven opdracht.");
+            showToast("Verbindingsfout bij doorgeven opdracht.", "error");
         } finally {
-            btn.innerText = "Start Apify Sleepnet";
+            btn.innerText = "Start Apify Search";
             btn.disabled = false;
         }
     }
@@ -179,14 +324,17 @@
         const token = localStorage.getItem('token');
         try {
             const res = await fetch(`${API_URL}/api/leads`, { headers: { 'Authorization': `Bearer ${token}` } });
-            if (res.status === 401) return logout();
+            if (res.status === 401) {
+                showToast("Sessie verlopen, log opnieuw in.", "error");
+                return logout();
+            }
             
             allLeads = await res.json();
             renderTable(allLeads);
             document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelector('.filter-btn').classList.add('active'); 
         } catch (error) {
-            console.error("Fout bij ophalen:", error);
+            showToast("Fout bij ophalen leads.", "error");
         }
     }
 
@@ -202,28 +350,28 @@
         tbody.innerHTML = '';
 
         if (!leads || leads.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4">Nog geen leads gevonden. Gooi het sleepnet uit!</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 3rem; color: var(--text-muted);">Nog geen leads gevonden in de database. Tijd om te sourcen!</td></tr>';
             return;
         }
 
         leads.forEach(lead => {
             const isGo = lead.status === 'GESCHIKT';
-            const statusBadge = isGo ? '<span class="status-go">GO</span>' : '<span class="status-nogo">NO-GO</span>';
+            const statusBadge = isGo ? '<span class="status-go">✓ GESCHIKT</span>' : '<span class="status-nogo">✕ NIET GESCHIKT</span>';
             
             const actionHtml = isGo && lead.invite_message ? 
-                `<button class="btn-primary" onclick='copyAndOpen(\`${lead.invite_message.replace(/'/g, "\\'")}\`, "${lead.linkedin_url}")'>Kopieer Invite & Open Profiel</button>` : 
-                (isGo ? '<i>Geen invite beschikbaar</i>' : '');
+                `<button class="btn-invite" onclick='copyAndOpen(\`${lead.invite_message.replace(/'/g, "\\'")}\`, "${lead.linkedin_url}")'>Kopieer Invite & Open Profiel</button>` : 
+                (isGo ? '<span style="color:var(--text-muted); font-size:0.85rem;">Geen bericht</span>' : '');
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>
-                    <strong>${lead.name || 'Onbekend'}</strong><br>
-                    <span style="font-size: 12px; color: #666;">${lead.headline || ''}</span>
+                    <span class="lead-name">${lead.name || 'Onbekend'}</span>
+                    <span class="lead-headline">${lead.headline || 'Geen headline beschikbaar'}</span>
                 </td>
                 <td>${statusBadge}</td>
                 <td class="summary-text">
-                    <strong>${lead.reason || ''}</strong><br>
-                    <span style="color: #666;">${lead.summary || ''}</span>
+                    <strong>${lead.reason || 'Geen reden opgegeven'}</strong>
+                    <span>${lead.summary || ''}</span>
                 </td>
                 <td>${actionHtml}</td>
             `;
@@ -233,7 +381,7 @@
 
     function copyAndOpen(message, url) {
         navigator.clipboard.writeText(message).then(() => {
-            alert(`✅ Invite gekopieerd naar klembord!\n\n${message}`);
+            showToast("Invite succesvol gekopieerd!", "success");
             if (url) window.open(url, '_blank');
         });
     }
